@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: minishop-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shop_dev_pass
+      POSTGRES_DB: minishop
+    ports:
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/posgresql/data
+
+volumes:
+  dbdata:
