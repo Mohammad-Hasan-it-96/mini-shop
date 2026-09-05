@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Locale {
+  ar
+  en
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  name          String
+  password      String
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  products      Product[]
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expairsAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Product {
+  id           Int                  @id @default(autoincrement())
+  slug         String               @unique
+  price        Decimal              @db.Decimal(10, 2)
+  stock        Int                  @default(0)
+  imageUrl     String?
+  published    Boolean              @default(false)
+  categoryId   Int
+  category     Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdById  Int?
+  createdBy    User?                @relation(fields: [createdById], references: [id])
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  translations ProductTranslation[]
+
+  @@index([categoryId])
+  @@index([published, createdAt])
+}
+
+model Category {
+  id           Int                   @id @default(autoincrement())
+  slug         String                @unique
+  createdAt    DateTime              @default(now())
+  products     Product[]
+  translations CategoryTranslation[]
+}
+
+model CategoryTranslation {
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  name       String
+  locale     Locale
+
+  @@unique([categoryId, locale])
+}
+
+model ProductTranslation {
+  id          Int     @id @default(autoincrement())
+  locale      Locale
+  name        String
+  productId   Int
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  description String?
+
+  @@unique([productId, locale])
+  @@index([name])
+}
